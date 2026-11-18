@@ -1,0 +1,81 @@
+name: ${COMPOSE_PROJECT_NAME:-tutor-effect}
+x-app: &app
+  build: ./backend
+  environment:
+    DATABASE_URL: postgresql+psycopg://tutor:${POSTGRES_PASSWORD:-tutor_local_pass}@db:5432/tutor
+    REDIS_URL: redis://redis:6379/0
+    JWT_SECRET: ${JWT_SECRET:-tutor-local-development-change-before-sharing-2026}
+    SEED_DEMO: ${SEED_DEMO:-true}
+  volumes:
+    - reports:/app/artifacts
+  depends_on:
+    db: {condition: service_healthy}
+    redis: {condition: service_healthy}
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-tutor-effect}-db
+    environment:
+      POSTGRES_DB: tutor
+      POSTGRES_USER: tutor
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tutor_local_pass}
+    ports: ["${DB_PORT:-17702}:5432"]
+    volumes: ["db_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tutor -d tutor"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-tutor-effect}-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: ["redis_data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  backend:
+    <<: *app
+    container_name: ${COMPOSE_PROJECT_NAME:-tutor-effect}-backend
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports: ["${BACKEND_PORT:-19202}:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+  worker:
+    <<: *app
+    container_name: ${COMPOSE_PROJECT_NAME:-tutor-effect}-worker
+    command: ["python", "-m", "src.worker"]
+    depends_on:
+      backend: {condition: service_healthy}
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,time; assert time.time()-os.stat('/tmp/worker-heartbeat').st_mtime<20"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  frontend:
+    build: ./frontend
+    container_name: ${COMPOSE_PROJECT_NAME:-tutor-effect}-frontend
+    ports: ["${FRONTEND_PORT:-18202}:80"]
+    depends_on:
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  db_data:
+  redis_data:
+  reports:
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${NETWORK_SUBNET:-10.253.103.0/24}

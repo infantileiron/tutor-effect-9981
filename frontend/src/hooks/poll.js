@@ -1,0 +1,1 @@
+export function startPolling(fn){let active=true;const tick=async()=>{if(!active)return;try{await fn();}catch(e){console.error(e);}setTimeout(tick,2200);};setTimeout(tick,2200);return()=>{active=false;};}

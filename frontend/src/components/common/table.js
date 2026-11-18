@@ -1,0 +1,1 @@
+import{esc}from'../../utils/format.js';export const table=(headers,rows)=>`<div class=table-wrap><table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(row=>`<tr>${row.map(cell=>`<td>${cell}</td>`).join('')}</tr>`).join(''):`<tr><td colspan=${headers.length}>还没有记录。请由分析员录入首条业务数据。</td></tr>`}</tbody></table></div>`;

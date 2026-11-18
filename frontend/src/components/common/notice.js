@@ -1,0 +1,1 @@
+import{esc}from'../../utils/format.js';export const notice=(text)=>`<aside class=notice>${esc(text)}</aside>`;export function flash(message,error=false){const el=document.querySelector('#flash');if(el){el.textContent=message;el.className=error?'flash error':'flash';el.hidden=false;setTimeout(()=>{el.hidden=true;},7000);}}

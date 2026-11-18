@@ -1,0 +1,1 @@
+import{request,post}from'./client.js';export const getReports=()=>request('/reports');export const runPlan=id=>post('/reports',{plan_id:+id});export const saveConclusion=(id,data)=>request(`/reports/${id}/conclusion`,{method:'PATCH',body:JSON.stringify(data)});

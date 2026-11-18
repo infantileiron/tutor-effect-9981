@@ -1,0 +1,1 @@
+import{getStudents}from'../api/students.js';import{getPlans}from'../api/plans.js';import{getReports}from'../api/reports.js';export const store={students:[],plans:[],reports:[],user:null};export async function refresh(){[store.students,store.plans,store.reports]=await Promise.all([getStudents(),getPlans(),getReports()]);}

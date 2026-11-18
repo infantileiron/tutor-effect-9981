@@ -1,0 +1,1 @@
+import{request,post}from'./client.js';export const getPlans=()=>request('/plans');export const savePlan=(data,id)=>id?request('/plans/'+id,{method:'PUT',body:JSON.stringify(data)}):post('/plans',data);
